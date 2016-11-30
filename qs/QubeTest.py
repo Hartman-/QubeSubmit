@@ -84,12 +84,14 @@ def main():
     listOfJobsToSubmit = []
     listOfJobsToSubmit.append(job)
 
+    print listOfJobsToSubmit[0]
+
     # As before, we create a list of 1 job, then submit the list.  Again, we
     # could submit just the single job w/o the list, but submitting a list is
     # good form.
-    listOfSubmittedJobs = qb.submit(listOfJobsToSubmit)
-    for job in listOfSubmittedJobs:
-        print job['id']
+    # listOfSubmittedJobs = qb.submit(listOfJobsToSubmit)
+    # for job in listOfSubmittedJobs:
+    #     print job['id']
 
 
 # Below runs the "main" function
