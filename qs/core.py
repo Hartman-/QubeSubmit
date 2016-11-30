@@ -7,7 +7,7 @@ import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
 
-from internal import Job, Submit, getFrameRange, parseMayaFile
+from qs.internal import Job, Submit, parseMayaFile
 
 #
 # GUI CLASSES
@@ -209,7 +209,9 @@ class TabLayout(QTabWidget):
         if self.fileDrop_Name.text() != 'File Name...':
             self.logStatus.emit('Parsing . . .')
             url = self.fileDrop_Name.text()
+            print('before')
             data = parseMayaFile(url)
+            print('after')
 
             cam = data[0]
             prefix = data[1]

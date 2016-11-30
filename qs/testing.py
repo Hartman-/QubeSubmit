@@ -25,7 +25,6 @@ def main():
     camera = renderCam()
     prefix = imagePrefix()
     frames = frameRange()
-
     items = [camera, prefix, frames]
 
     for item in items:
