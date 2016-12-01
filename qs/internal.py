@@ -31,45 +31,41 @@ class Submit(object):
         self.jobs.append(in_job)
 
     def submit(self):
-        qb.submit(self.jobs[0])
+        # qb.submit(self.jobs[0])
+        print self.jobs[0]
 
 
 # Qube Job Creation
 class Job(object):
-    def __init__(self, jname, jcpus, jpriority, pren, pprocs, pproj, pscene, prd, pcam, pfrange, pchunks, jproto='cmdrange'):
+    def __init__(self):
         self.qjob = {}
         self.qpackage = {}
 
         self.MAYAEXEPATH = 'C:/Program Files/Autodesk/Maya2016.5/bin/Render.exe'
-        self.NUMPROCESSORS = str(pprocs)
-        self.RENDERER = str(pren)
 
-        self.jname = str(jname)
-        self.jcpus = str(jcpus)
-        self.jpriority = str(jpriority)
-        self.jproto = str(jproto)
-
-        self.pprocs = str(pprocs)
-        self.pproj = str(pproj)
-        self.prd = str(prd)
-        self.pcam = str(pcam)
-        self.pfrange = str(pfrange)
-        self.pchunks = str(pchunks)
-        self.pscene = str(pscene)
-
-        self.setupPackage()
-        self.buildJob()
+        self.name = ''
+        self.insts = 0
+        self.priority = 0
+        self.proto = str('cmdrange')
+        self.ren = ''
+        self.procs = 0
+        self.proj = ''
+        self.imgdir = ''
+        self.cam = ''
+        self.frange = ''
+        self.chunks = 0
+        self.scene = ''
 
     def buildJob(self):
 
-        self.qjob['name'] = self.jname
-        self.qjob['prototype'] = self.jproto
+        self.qjob['name'] = self.name
+        self.qjob['prototype'] = self.proto
 
         # # of Instances/Computers
-        self.qjob['cpus'] = self.jcpus
+        self.qjob['cpus'] = self.insts
 
-        self.qjob['priority'] = int(self.jpriority)
-        self.qjob['reservations'] = 'host.processors=%s' % str(self.NUMPROCESSORS)
+        self.qjob['priority'] = int(self.priority)
+        self.qjob['reservations'] = 'host.processors=%s' % str(self.procs)
 
         self.qjob['package'] = self.qpackage
 
@@ -82,31 +78,32 @@ class Job(object):
 
     def setupPackage(self):
 
-        self.qpackage['simpleCmdType'] = 'Maya BatchRender (%s)' % self.RENDERER
+        self.qpackage['simpleCmdType'] = 'Maya BatchRender (%s)' % self.ren
 
-        self.qpackage['-cam'] = self.pcam
+        self.qpackage['-cam'] = self.cam
 
-        self.qpackage['-n'] = str(self.NUMPROCESSORS)
+        self.qpackage['-n'] = str(self.procs)
 
-        self.qpackage['-proj'] = self.pproj
+        self.qpackage['-proj'] = self.proj
         # 'X:\Classof2017\imh29\_ToRenderfarm\Renderfarm_PRman_Test'
 
-        self.qpackage['-rd'] = self.prd
+        self.qpackage['-rd'] = self.imgdir
 
-        self.qpackage['-renderer'] = self.RENDERER
+        self.qpackage['-renderer'] = self.ren
         # self.qpackage['-rl'] = 'test'
 
         # self.qpackage['cmdline'] = '"C:/Program Files/Autodesk/Maya2016.5/bin/Render.exe" -s QB_FRAME_START -e QB_FRAME_END -b QB_FRAME_STEP -n 20 -proj "X:\Classof2017\imh29\_ToRenderfarm\Renderfarm_PRman_Test" -renderer rman "X:\Classof2017\imh29\_ToRenderfarm\Renderfarm_PRman_Test\scenes\Renderfarm_PRman_Simple.ma"'
 
         self.qpackage['mayaExe'] = self.MAYAEXEPATH
 
-        self.qpackage['range'] = self.pfrange
-        self.qpackage['rangeChunkSize'] = self.pchunks
+        self.qpackage['range'] = self.frange
+        self.qpackage['rangeChunkSize'] = self.chunks
 
-        self.qpackage['scenefile'] = self.pscene
+        self.qpackage['scenefile'] = self.scene
         # 'X:\Classof2017\imh29\_ToRenderfarm\Renderfarm_PRman_Test\scenes\Renderfarm_PRman_Simple.ma'
 
         self.qpackage['cmdline'] = self.buildCmd()
+        self.buildJob()
 
     def buildCmd(self):
         cmd = '"%s" -s QB_FRAME_START -e QB_FRAME_END -b QB_FRAME_STEP -rd %s -cam %s -n %s -proj "%s" -renderer %s "%s"' % (
@@ -115,42 +112,9 @@ class Job(object):
             self.qpackage['-cam'],
             self.qpackage['-n'],
             self.qpackage['-proj'],
-            self.RENDERER,
+            self.ren,
             self.qpackage['scenefile'])
         return cmd
-
-
-
-# Return the Renderable Camera
-# def getRenderCamera(filepath):
-#     numcams = 0
-#     with open(filepath) as fileobj:
-#         for line in fileobj:
-#             if line.startswith("createNode camera -n"):
-#                 numcams += 1
-#     print numcams
-#
-#     fp = open(filepath)
-#
-#     index = 0
-#     while index < numcams:
-#         line = fp.next()
-#         if line.startswith("createNode camera -n"):
-#             while len(line.rstrip().expandtabs(4)) - len(line.rstrip().lstrip()) != 4:
-#                 line = fp.next()
-#                 # if line.startswith('setAttr ".rnd" no;"'):
-#                 #     break
-#                 # else:
-#                 #     print(line)
-#                 #     break
-#                 print(line)
-#             index += 1
-#
-#     # Base Line Length
-#     # print(line.rstrip().expandtabs(4))
-#     # print(line.rstrip().lstrip())
-#     # print(len(line.rstrip().expandtabs(4)) - len(line.rstrip().lstrip()))
-#     # fp.close()
 
 
 def parseMayaFile(filepath):
@@ -166,25 +130,6 @@ def parseMayaFile(filepath):
     returnObjects.pop()
     print(returnObjects)
     return returnObjects
-
-
-# Return the Render Setting Frame Range
-def getFrameRange(filepath):
-    fp = open(filepath)
-    while True:
-        line = fp.next()
-        if line.startswith("select -ne :defaultRenderGlobals;"):
-            break
-    while line.find('".fs"') == -1:
-        line = fp.next()
-    start = int(line.split(" ")[2].split(";")[0])
-    while line.find('".ef"') == -1:
-        line = fp.next()
-    end = int(line.split(" ")[2].split(";")[0])
-    frames = end - start + 1
-    frameText = '%s-%s' % (start, end)
-    print 'frames: %s-%s (%s)' % (start, end, frames)
-    return frameText
 
 
 # TESTING
