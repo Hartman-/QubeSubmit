@@ -3,6 +3,7 @@
 
 import os
 import sys
+import threading
 
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -14,15 +15,31 @@ from qs.internal import Job, Submit, parseMayaFile
 #
 
 
+class HorizLine(QHBoxLayout):
+    def __init__(self, parent=None):
+        super(HorizLine, self).__init__(parent)
+
+        line = QFrame()
+        line.setFrameStyle(QFrame.HLine | QFrame.Plain)
+        line.setLineWidth(1)
+        line.setStyleSheet("color: #777")
+
+        self.addWidget(line)
+        self.setContentsMargins(10, 20, 10, 20)
+
+
 # Custom Line Item for information View
 class HLineItem(QHBoxLayout):
+
+    searchClicked = Signal(bool)
+
     def __init__(self, labeltext='PLACEHOLDER', inputtext='PLACEHOLDER', inputtype='string', parent=None):
         super(HLineItem, self).__init__(parent)
 
         self.label = QLabel()
         self.label.setText(labeltext)
-        self.label.setFixedWidth(125)
-        self.label.setContentsMargins(0, 0, 40, 0)
+        self.label.setFixedWidth(105)
+        self.label.setContentsMargins(0, 0, 20, 0)
         self.label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         self.addWidget(self.label)
@@ -43,10 +60,31 @@ class HLineItem(QHBoxLayout):
 
             self.addWidget(self.list)
 
+        elif inputtype == 'btn' and type(inputtext) is str:
+            self.btn = QPushButton(inputtext)
+            self.addWidget(self.btn)
+
+        elif inputtype == 'dir' and type(inputtext) is str:
+            self.btn = QPushButton("...")
+            self.btn.setFixedWidth(25)
+
+            self.input = QLineEdit()
+            self.input.setText(inputtext)
+            self.input.setToolTip(inputtext)
+
+            self.addWidget(self.input)
+            self.addWidget(self.btn)
+
+            self.btn.pressed.connect(self.emitClicked)
+
         else:
             self.input = QLineEdit()
             self.input.setText(inputtext)
+            self.input.setToolTip(inputtext)
             self.addWidget(self.input)
+
+    def emitClicked(self):
+        self.searchClicked.emit(True)
 
 
 class HLineList(QVBoxLayout):
@@ -72,6 +110,7 @@ class HTabLayout(QTabWidget):
 class FileDrop(QFrame):
 
     fileDropped = Signal(list)
+    areaClicked = Signal(bool)
 
     def __init__(self, parent=None):
         super(FileDrop, self).__init__(parent)
@@ -106,6 +145,9 @@ class FileDrop(QFrame):
         else:
             event.ignore()
 
+    def mousePressEvent(self, event):
+        self.areaClicked.emit(True)
+
 
 class TabLayout(QTabWidget):
 
@@ -126,6 +168,54 @@ class TabLayout(QTabWidget):
 
         # -------------------------------------------------------------------------------------------------------------
 
+        # Setup File Drop Location
+        self.fileDrop_Name = QLabel('Drop File Here\nor...\nClick Here')
+        self.fileDrop_Name.setToolTip(self.fileDrop_Name.text())
+        self.fileDrop_Name.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.fileDrop_Name.setWordWrap(True)
+
+        layout_Frame = QVBoxLayout()
+        layout_Frame.addWidget(self.fileDrop_Name)
+
+        self.fileDropLabel = QLabel('Scene File:')
+        self.fileDropBox = FileDrop(self)
+        self.fileDropBox.setLayout(layout_Frame)
+        self.fileDropBox.areaClicked.connect(self.dropClicked)
+        self.fileDropBox.fileDropped.connect(self.fileDropped)
+
+        layout_Drop = QVBoxLayout()
+        layout_Drop.addWidget(self.fileDropLabel)
+        layout_Drop.addWidget(self.fileDropBox)
+
+        # Setup Scene Information Line Items
+        self.info_Renderer = HLineItem('Render Engine', ['rman', 'vray'], inputtype='list')
+        self.info_Proj = HLineItem('Project Path', 'X:\\', inputtype='dir')
+        self.info_Prefix = HLineItem('Image Prefix', 'crazytown')
+        self.info_Frange = HLineItem('Frame Range', '1-10')
+        self.info_Camera = HLineItem('Camera', 'cam_010')
+        self.info_FrameDir = HLineItem('Image Directory', 'X:\\', inputtype='dir')
+
+        self.info_Proj.searchClicked.connect(self.setProjPath)
+        self.info_FrameDir.searchClicked.connect(self.setImagePath)
+
+        sceneitems = [self.info_Renderer, self.info_Proj, self.info_Prefix, self.info_Frange, self.info_Camera, self.info_FrameDir]
+        scenelist = HLineList(sceneitems)
+
+        horizLine = HorizLine()
+
+        self.line_Parse = HLineItem('Extract from File', 'Run', inputtype='btn')
+        self.line_Parse.btn.pressed.connect(self.updateSceneVariables)
+
+        # Setup Scene Tab Layout
+        layout_Scene = QVBoxLayout()
+        layout_Scene.addLayout(layout_Drop)
+        layout_Scene.addLayout(scenelist)
+        layout_Scene.addLayout(horizLine)
+        layout_Scene.addLayout(self.line_Parse)
+        self.tab_SceneInfo.setLayout(layout_Scene)
+
+        # -------------------------------------------------------------------------------------------------------------
+
         self.info_Inst = HLineItem('# of Computers', '1', inputtype='int')
         self.info_Chunks = HLineItem('# of Chunks', '5', inputtype='int')
         self.info_Procs = HLineItem('Cores per Chunk', '10', inputtype='int')
@@ -138,45 +228,6 @@ class TabLayout(QTabWidget):
         layout_Job.addLayout(linelist)
 
         self.tab_JobInfo.setLayout(layout_Job)
-
-        # -------------------------------------------------------------------------------------------------------------
-
-        # Setup File Drop Location
-        self.fileDrop_Name = QLabel('File Name...')
-        self.fileDrop_Name.setWordWrap(True)
-        layout_Frame = QVBoxLayout()
-        layout_Frame.addWidget(self.fileDrop_Name)
-
-        self.fileDropLabel = QLabel('Scene File:')
-        self.fileDropBox = FileDrop(self)
-        self.fileDropBox.setLayout(layout_Frame)
-        self.fileDropBox.fileDropped.connect(self.fileDropped)
-
-        layout_Drop = QVBoxLayout()
-        layout_Drop.addWidget(self.fileDropLabel)
-        layout_Drop.addWidget(self.fileDropBox)
-
-        # Setup Scene Information Line Items
-        self.info_Renderer = HLineItem('Render Engine', ['rman', 'vray'], inputtype='list')
-        self.info_Proj = HLineItem('Project Path', 'C:\\Users\\imh29')
-        self.info_Prefix = HLineItem('Image Prefix', 'crazytown')
-        self.info_Frange = HLineItem('Frame Range', '1-10')
-        self.info_Camera = HLineItem('Camera', 'cam_010')
-        self.info_FrameDir = HLineItem('Image Directory', 'C:\\Users\\imh29')
-
-        sceneitems = [self.info_Renderer, self.info_Proj, self.info_Prefix, self.info_Frange, self.info_Camera, self.info_FrameDir]
-        scenelist = HLineList(sceneitems)
-
-        self.btn_Parse = QPushButton('Parse Maya File')
-        self.btn_Parse.pressed.connect(self.updateSceneVariables)
-
-
-        # Setup Scene Tab Layout
-        layout_Scene = QVBoxLayout()
-        layout_Scene.addLayout(layout_Drop)
-        layout_Scene.addLayout(scenelist)
-        layout_Scene.addWidget(self.btn_Parse)
-        self.tab_SceneInfo.setLayout(layout_Scene)
 
         # -------------------------------------------------------------------------------------------------------------
 
@@ -196,6 +247,55 @@ class TabLayout(QTabWidget):
 
         # -------------------------------------------------------------------------------------------------------------
 
+    def setProjPath(self, b):
+        if b is True:
+            folderpath = self.getFolderPath('Set Project Folder')
+            if folderpath is not None:
+                self.info_Proj.input.setText(folderpath)
+                self.info_Proj.input.setToolTip(self.info_Proj.input.text())
+            else:
+                self.logStatus.emit('No Project Folder Selected')
+
+    def setImagePath(self, b):
+        if b is True:
+            folderpath = self.getFolderPath('Set Images Folder')
+            if folderpath is not None:
+                self.info_FrameDir.input.setText(folderpath)
+                self.info_FrameDir.input.setToolTip(self.info_FrameDir.input.text())
+            else:
+                self.logStatus.emit('No Image Folder Selected')
+
+    def dropClicked(self, b):
+        if b is True:
+            filepath = self.getFilePath('Set Maya Scene File')
+            if filepath is not None:
+                self.fileDrop_Name.setText(filepath)
+                self.fileDrop_Name.setToolTip(self.fileDrop_Name.text())
+            else:
+                self.logStatus.emit('No Maya File Selected')
+
+    def getFilePath(self, title):
+        basePath = 'X:\\'
+        fileName = QFileDialog.getOpenFileName(self,
+                                               str(title), basePath,
+                                               str("Maya Files (*.ma *.mb)"))
+        if fileName[0] != '':
+            print(fileName)
+            return fileName[0]
+        else:
+            print('Operation Canceled')
+            return None
+
+    def getFolderPath(self, title):
+        basePath = 'X:\\'
+        fileName = QFileDialog.getExistingDirectory(self, str(title), basePath)
+        if fileName != '':
+            print(fileName)
+            return fileName
+        else:
+            print('Operation Canceled')
+            return None
+
     def fileDropped(self, l):
         for url in l:
             if os.path.exists(url):
@@ -209,9 +309,7 @@ class TabLayout(QTabWidget):
         if self.fileDrop_Name.text() != 'File Name...':
             self.logStatus.emit('Parsing . . .')
             url = self.fileDrop_Name.text()
-            print('before')
             data = parseMayaFile(url)
-            print('after')
 
             cam = data[0]
             prefix = data[1]
@@ -248,8 +346,9 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.layout_Tabs)
         main_layout.addWidget(self.btn_Submit)
         self.setCentralWidget(self.main_widget)
-
         self.setFixedWidth(300)
+
+
         self.show()
 
     @Slot(str)

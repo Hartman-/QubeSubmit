@@ -155,8 +155,9 @@ class Job(object):
 
 def parseMayaFile(filepath):
     # MAKE SURE TO REPLACE PY PATH WITH SERVER PATH
-    cmd = ["C:\\Program Files\\Autodesk\\Maya2016.5\\bin\\mayapy.exe", "X:\\Classof2017\\imh29\\_cmds\\testing.py", filepath]
-    help = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=r'C:\Users\imh29')
+    userPath = r'%s' % os.path.expanduser('~')
+    cmd = ["C:\\Program Files\\Autodesk\\Maya2016.5\\bin\\mayapy.exe", "X:\\Classof2017\\imh29\\_cmds\\MayaParse.py", filepath]
+    help = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=userPath)
     ret, err = help.communicate()
 
     print(err)
