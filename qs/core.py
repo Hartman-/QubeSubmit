@@ -119,8 +119,15 @@ class TabLayout(QTabWidget):
                 self.logStatus.emit('No Project Folder Selected')
 
     def setImagePath(self, b):
+        projpath = self.info_Proj.input.text()
+        root = 'X:\\'
+        startpath = root
+
+        if projpath != root:
+            startpath = projpath
+
         if b is True:
-            folderpath = self.getFolderPath('Set Images Folder')
+            folderpath = self.getFolderPath('Set Images Folder', basepath=startpath)
             if folderpath is not None:
                 self.info_FrameDir.input.setText(folderpath)
                 self.info_FrameDir.input.setToolTip(self.info_FrameDir.input.text())
@@ -128,18 +135,24 @@ class TabLayout(QTabWidget):
                 self.logStatus.emit('No Image Folder Selected')
 
     def dropClicked(self, b):
+        projpath = self.info_Proj.input.text()
+        root = 'X:\\'
+        startpath = root
+
+        if projpath != root:
+            startpath = projpath
+
         if b is True:
-            filepath = self.getFilePath('Set Maya Scene File')
+            filepath = self.getFilePath('Set Maya Scene File', basepath=startpath)
             if filepath is not None:
                 self.fileDrop_Name.setText(filepath)
                 self.fileDrop_Name.setToolTip(self.fileDrop_Name.text())
             else:
                 self.logStatus.emit('No Maya File Selected')
 
-    def getFilePath(self, title):
-        basePath = 'X:\\'
+    def getFilePath(self, title, basepath='X:\\'):
         fileName = QFileDialog.getOpenFileName(self,
-                                               str(title), basePath,
+                                               str(title), basepath,
                                                str("Maya Files (*.ma *.mb)"))
         if fileName[0] != '':
             print(fileName)
@@ -148,9 +161,8 @@ class TabLayout(QTabWidget):
             print('Operation Canceled')
             return None
 
-    def getFolderPath(self, title):
-        basePath = 'X:\\'
-        fileName = QFileDialog.getExistingDirectory(self, str(title), basePath)
+    def getFolderPath(self, title, basepath = 'X:\\'):
+        fileName = QFileDialog.getExistingDirectory(self, str(title), basepath)
         if fileName != '':
             print(fileName)
             return fileName
@@ -161,14 +173,10 @@ class TabLayout(QTabWidget):
     def fileDropped(self, l):
         for url in l:
             if os.path.exists(url):
-                # print(url)
-                # frames = getFrameRange(url)
-                # self.info_Frange.input.setText(frames)
                 self.fileDrop_Name.setText(url)
 
     def updateSceneVariables(self):
-        # print(self.fileDrop_Name.text())
-        if self.fileDrop_Name.text() != 'File Name...':
+        if os.path.exists(self.fileDrop_Name.text()):
             self.logStatus.emit('Parsing . . .')
             url = self.fileDrop_Name.text()
             data = parseMayaFile(url)
