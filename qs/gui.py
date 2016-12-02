@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -'''- coding: utf-8 -'''-
 
+import random
 import sys
 
 from PySide.QtCore import *
@@ -18,6 +19,19 @@ class HorizLine(QHBoxLayout):
 
         self.addWidget(line)
         self.setContentsMargins(10, 20, 10, 20)
+
+
+class VertLine(QVBoxLayout):
+    def __init__(self, parent=None):
+        super(VertLine, self).__init__(parent)
+
+        line = QFrame()
+        line.setFrameStyle(QFrame.VLine | QFrame.Plain)
+        line.setLineWidth(1)
+        line.setStyleSheet("color: #777")
+
+        self.addWidget(line)
+        self.setContentsMargins(20, 10, 20, 10)
 
 
 class HLineItem(QHBoxLayout):
@@ -127,3 +141,79 @@ class FileDrop(QFrame):
 
     def mousePressEvent(self, event):
         self.areaClicked.emit(True)
+
+
+class HTable(QWidget):
+    def __init__(self, hosts, keys, parent=None):
+        super(HTable, self).__init__(parent)
+
+        self.hosts = hosts
+        self.keys = keys
+
+        self.colcnt = len(self.keys)
+        self.rowcnt = len(self.hosts)
+
+        self.tablewidget = QTableWidget(self.rowcnt, self.colcnt)
+        self.tablewidget.setSortingEnabled(True)
+
+        self.initTable()
+
+    def initTable(self):
+        vheader = QHeaderView(Qt.Orientation.Vertical)
+        # vheader.setResizeMode(QHeaderView.ResizeToContents)
+        self.tablewidget.setVerticalHeader(vheader)
+        self.tablewidget.verticalHeader().hide()
+
+        hheader = QHeaderView(Qt.Orientation.Horizontal)
+        # hheader.setResizeMode(QHeaderView.ResizeToContents)
+        self.tablewidget.setHorizontalHeader(hheader)
+        hheader.setClickable(True)
+        self.tablewidget.setHorizontalHeaderLabels(self.keys)
+
+        self.buildTable()
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.tablewidget)
+        self.setLayout(layout)
+
+    def buildTable(self):
+        self.tablewidget.setSortingEnabled(False)
+        rowindex = 0
+        colindex = 0
+        for host in self.hosts:
+            while colindex < self.colcnt:
+                item = QTableWidgetItem(str(host[self.keys[colindex].lower()]))
+                item.setFlags(Qt.ItemIsEnabled)
+                self.tablewidget.setItem(rowindex, colindex, item)
+                self.tablewidget.setColumnWidth(colindex, 100)
+                colindex += 1
+            colindex = 0
+            rowindex += 1
+        self.tablewidget.setSortingEnabled(True)
+
+    def updateTableLayout(self, keys):
+        self.keys = keys
+        self.colcnt = len(self.keys)
+        self.rowcnt = len(self.hosts)
+
+        self.tablewidget.setColumnCount(self.colcnt)
+        self.tablewidget.setRowCount(self.rowcnt)
+
+        self.tablewidget.setHorizontalHeaderLabels(self.keys)
+
+    def refresh(self, hosts, newkeys):
+        self.hosts = hosts
+
+        # Check if Keys/Titles changed
+        if len(newkeys) > len(self.keys):
+            self.updateTableLayout(newkeys)
+        else:
+            # If the order changes, update the columns
+            for i, key in enumerate(newkeys):
+                if key != self.keys[i]:
+                    self.updateTableLayout(newkeys)
+
+        # Update the table info regardless
+        # Allows for information to update even if keys/titles haven't changed
+        self.buildTable()

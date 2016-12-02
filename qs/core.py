@@ -7,8 +7,8 @@ import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
 
-from qs.gui import HorizLine, HLineItem, HLineList, FileDrop
-from qs.internal import Job, Submit, parseMayaFile
+from qs.gui import HorizLine, VertLine, HLineItem, HLineList, FileDrop, HTable
+from qs.internal import Job, Submit, parseMayaFile, getWorkers
 
 
 class TabLayout(QTabWidget):
@@ -226,19 +226,37 @@ class MainWindow(QMainWindow):
         right_layout = QVBoxLayout()
         right_layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
 
-        testlabel = QLabel('Computers')
-        right_layout.addWidget(testlabel)
+        workers = getWorkers()
+        self.keys = ['Name', 'Address', 'State']
+        self.worker_table = HTable(workers, self.keys)
+
+        title_table = QLabel('All Workers')
+        btn_refresh = QPushButton('Refresh')
+
+        title_layout = QHBoxLayout()
+        title_layout.addWidget(title_table)
+        title_layout.addWidget(btn_refresh)
+
+        btn_refresh.pressed.connect(self.refresh)
+
+        right_layout.addLayout(title_layout)
+        right_layout.addWidget(self.worker_table)
 
         # -------------------------------------------------------------------------------------------------------------
 
+        vLine = VertLine()
+
         main_layout.addLayout(left_layout)
+        main_layout.addLayout(vLine)
         main_layout.addLayout(right_layout)
 
         self.setCentralWidget(self.main_widget)
-        # self.setFixedWidth(300)
-
-
         self.show()
+
+    def refresh(self):
+        workers = getWorkers()
+        keys = ['Name', 'Address', 'State']
+        self.worker_table.refresh(workers, keys)
 
     @Slot(str)
     def setStatusBar(self, text):

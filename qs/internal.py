@@ -23,6 +23,10 @@ except ImportError:
             break
 
 
+def getWorkers():
+    return qb.hostinfo()
+
+
 # Qube Farm Submission
 class Submit(object):
     def __init__(self):
