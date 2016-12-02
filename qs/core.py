@@ -206,17 +206,36 @@ class MainWindow(QMainWindow):
 
         self.statusBar().showMessage('Ready')
 
-        main_layout = QVBoxLayout(self.main_widget)
+        main_layout = QHBoxLayout(self.main_widget)
+
+        # -------------------------------------------------------------------------------------------------------------
+
+        left_layout = QVBoxLayout()
 
         self.info_Name = HLineItem('Job Name', 'Qube Python Submission')
         self.btn_Submit = QPushButton('Submit Job')
+        self.btn_Submit.setFixedHeight(50)
         self.btn_Submit.pressed.connect(self.submitJob)
 
-        main_layout.addLayout(self.info_Name)
-        main_layout.addWidget(self.layout_Tabs)
-        main_layout.addWidget(self.btn_Submit)
+        left_layout.addLayout(self.info_Name)
+        left_layout.addWidget(self.layout_Tabs)
+        left_layout.addWidget(self.btn_Submit)
+
+        # -------------------------------------------------------------------------------------------------------------
+
+        right_layout = QVBoxLayout()
+        right_layout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+
+        testlabel = QLabel('Computers')
+        right_layout.addWidget(testlabel)
+
+        # -------------------------------------------------------------------------------------------------------------
+
+        main_layout.addLayout(left_layout)
+        main_layout.addLayout(right_layout)
+
         self.setCentralWidget(self.main_widget)
-        self.setFixedWidth(300)
+        # self.setFixedWidth(300)
 
 
         self.show()
