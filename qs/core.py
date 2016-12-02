@@ -7,7 +7,7 @@ import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
 
-from qs.gui import HorizLine, VertLine, HLineItem, HLineList, FileDrop, HTable
+from qs.gui import HorizLine, VertLine, HLineItem, HLineList, FileDrop, HTable, ListDrop
 from qs.internal import Job, Submit, parseMayaFile, getWorkers
 
 
@@ -86,8 +86,18 @@ class TabLayout(QTabWidget):
         itemlist = [self.info_Inst, self.info_Chunks, self.info_Procs]
         linelist = HLineList(itemlist)
 
+        self.list_incl = ListDrop(self)
+        self.list_incl.itemDropped.connect(self.addInclItem)
+
+        self.list_excl = ListDrop(self)
+        self.list_excl.itemDropped.connect(self.addExclItem)
+
         layout_Job = QVBoxLayout()
         layout_Job.addLayout(linelist)
+
+        layout_Job.addWidget(self.list_incl)
+        layout_Job.addWidget(self.list_excl)
+
 
         self.tab_JobInfo.setLayout(layout_Job)
 
@@ -108,6 +118,15 @@ class TabLayout(QTabWidget):
         self.tab_GenInfo.setLayout(layout_Gen)
 
         # -------------------------------------------------------------------------------------------------------------
+
+    def addInclItem(self, worker):
+        item = QListWidgetItem(worker, self.list_incl)
+        item.setStatusTip(worker)
+        print self.list_excl.iterAllItems()
+
+    def addExclItem(self, worker):
+        item = QListWidgetItem(worker, self.list_excl)
+        item.setStatusTip(worker)
 
     def setProjPath(self, b):
         if b is True:

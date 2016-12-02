@@ -4,6 +4,8 @@
 import random
 import sys
 
+import re
+
 from PySide.QtCore import *
 from PySide.QtGui import *
 
@@ -143,9 +145,47 @@ class FileDrop(QFrame):
         self.areaClicked.emit(True)
 
 
+class ListDrop(QListWidget):
+
+    itemDropped = Signal(object)
+
+    def __init__(self, parent=None):
+        super(ListDrop, self).__init__(parent)
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, event):
+        event.accept()
+
+    def dragMoveEvent(self, event):
+        event.setDropAction(Qt.CopyAction)
+        event.accept()
+
+    def dropEvent(self, event):
+        event.setDropAction(Qt.CopyAction)
+        event.accept()
+
+        # convert the table mimetype into a regular mimetype
+        data = event.mimeData().retrieveData('application/x-qabstractitemmodeldatalist', 'text/plain')
+        # get it into the ballpark
+        string = str(data).encode('ascii')
+
+        # remove any erroneous characters
+        fixString = re.sub('^[^0-9a-zA-Z]+', '', string)
+        # Emit string with decoding from byte string to a usable string
+        self.itemDropped.emit(fixString.decode('utf-8'))
+
+    def iterAllItems(self):
+        list = []
+        for i in range(self.count()):
+            text = self.item(i).text().decode('utf-8')
+            list.append(text)
+        return list
+
+
 class HTable(QWidget):
     def __init__(self, hosts, keys, parent=None):
         super(HTable, self).__init__(parent)
+        self.setAcceptDrops(True)
 
         self.hosts = hosts
         self.keys = keys
@@ -155,6 +195,11 @@ class HTable(QWidget):
 
         self.tablewidget = QTableWidget(self.rowcnt, self.colcnt)
         self.tablewidget.setSortingEnabled(True)
+
+        self.tablewidget.setAcceptDrops(True)
+        self.tablewidget.setDragEnabled(True)
+
+        self.tablewidget.cellClicked.connect(self.fuccboi)
 
         self.initTable()
 
@@ -177,6 +222,11 @@ class HTable(QWidget):
         layout.addWidget(self.tablewidget)
         self.setLayout(layout)
 
+    def fuccboi(self, a, b):
+        # print '[%s][%s]' % (a, b)
+        item = self.tablewidget.item(a, 0)
+        print item.text()
+
     def buildTable(self):
         self.tablewidget.setSortingEnabled(False)
         rowindex = 0
@@ -184,7 +234,7 @@ class HTable(QWidget):
         for host in self.hosts:
             while colindex < self.colcnt:
                 item = QTableWidgetItem(str(host[self.keys[colindex].lower()]))
-                item.setFlags(Qt.ItemIsEnabled)
+                item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsDragEnabled | Qt.ItemIsSelectable | Qt.ItemIsDropEnabled)
                 self.tablewidget.setItem(rowindex, colindex, item)
                 self.tablewidget.setColumnWidth(colindex, 100)
                 colindex += 1
@@ -217,3 +267,6 @@ class HTable(QWidget):
         # Update the table info regardless
         # Allows for information to update even if keys/titles haven't changed
         self.buildTable()
+
+    def dragMoveEvent(self, e):
+        print 'helpme'
