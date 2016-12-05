@@ -153,6 +153,18 @@ class ListDrop(QListWidget):
         super(ListDrop, self).__init__(parent)
         self.setAcceptDrops(True)
 
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.on_context_menu)
+
+        # create context menu
+        self.rightClickMenu = QMenu(self)
+        act_Remove = QAction('Remove', self)
+        act_Remove.triggered.connect(self.removeItem)
+        self.rightClickMenu.addAction(act_Remove)
+        # self.rightClickMenu.addAction(QAction('test1', self))
+        # self.rightClickMenu.addSeparator()
+        # self.rightClickMenu.addAction(QAction('test2', self))
+
     def dragEnterEvent(self, event):
         event.accept()
 
@@ -162,24 +174,33 @@ class ListDrop(QListWidget):
 
     def dropEvent(self, event):
         event.setDropAction(Qt.CopyAction)
-        event.accept()
 
-        # convert the table mimetype into a regular mimetype
-        data = event.mimeData().retrieveData('application/x-qabstractitemmodeldatalist', 'text/plain')
-        # get it into the ballpark
-        string = str(data).encode('ascii')
+        data = event.mimeData()
+        if data.formats()[0] == 'application/x-qabstractitemmodeldatalist':
+            event.accept()
 
-        # remove any erroneous characters
-        fixString = re.sub('^[^0-9a-zA-Z]+', '', string)
-        # Emit string with decoding from byte string to a usable string
-        self.itemDropped.emit(fixString.decode('utf-8'))
+            # StackOverflow Wizard Magic Right Here
+            model = QStandardItemModel()
+            model.dropMimeData(data, Qt.CopyAction, 0,0, QModelIndex())
+
+            uniText = model.item(0).text()
+            # No Duplicates!
+            if uniText not in self.iterAllItems():
+                self.itemDropped.emit(uniText)
 
     def iterAllItems(self):
         list = []
         for i in range(self.count()):
-            text = self.item(i).text().decode('utf-8')
+            text = str(self.item(i).text())
             list.append(text)
         return list
+
+    def on_context_menu(self, point):
+        if self.itemAt(point) is not None:
+            self.rightClickMenu.exec_(self.mapToGlobal(point))
+
+    def removeItem(self):
+        print point
 
 
 class HTable(QWidget):
@@ -198,8 +219,6 @@ class HTable(QWidget):
 
         self.tablewidget.setAcceptDrops(True)
         self.tablewidget.setDragEnabled(True)
-
-        self.tablewidget.cellClicked.connect(self.fuccboi)
 
         self.initTable()
 
@@ -222,19 +241,21 @@ class HTable(QWidget):
         layout.addWidget(self.tablewidget)
         self.setLayout(layout)
 
-    def fuccboi(self, a, b):
-        # print '[%s][%s]' % (a, b)
-        item = self.tablewidget.item(a, 0)
-        print item.text()
-
     def buildTable(self):
         self.tablewidget.setSortingEnabled(False)
+
+        dragFlags = Qt.ItemIsEnabled | Qt.ItemIsDragEnabled | Qt.ItemIsSelectable | Qt.ItemIsDropEnabled
+        staticFlags = Qt.ItemIsEnabled
+
         rowindex = 0
         colindex = 0
         for host in self.hosts:
             while colindex < self.colcnt:
                 item = QTableWidgetItem(str(host[self.keys[colindex].lower()]))
-                item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsDragEnabled | Qt.ItemIsSelectable | Qt.ItemIsDropEnabled)
+                if colindex == 0:
+                    item.setFlags(dragFlags)
+                else:
+                    item.setFlags(staticFlags)
                 self.tablewidget.setItem(rowindex, colindex, item)
                 self.tablewidget.setColumnWidth(colindex, 100)
                 colindex += 1
@@ -267,6 +288,3 @@ class HTable(QWidget):
         # Update the table info regardless
         # Allows for information to update even if keys/titles haven't changed
         self.buildTable()
-
-    def dragMoveEvent(self, e):
-        print 'helpme'

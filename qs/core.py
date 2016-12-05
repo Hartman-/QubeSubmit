@@ -18,6 +18,8 @@ class TabLayout(QTabWidget):
     def __init__(self, parent=None):
         super(TabLayout, self).__init__(parent)
 
+        horizLine = HorizLine()
+
         # -------------------------------------------------------------------------------------------------------------
 
         self.tab_JobInfo = QWidget()
@@ -63,8 +65,6 @@ class TabLayout(QTabWidget):
         sceneitems = [self.info_Renderer, self.info_Proj, self.info_Prefix, self.info_Frange, self.info_Camera, self.info_FrameDir]
         scenelist = HLineList(sceneitems)
 
-        horizLine = HorizLine()
-
         self.line_Parse = HLineItem('Extract from File', 'Run', inputtype='btn')
         self.line_Parse.btn.pressed.connect(self.updateSceneVariables)
 
@@ -86,16 +86,20 @@ class TabLayout(QTabWidget):
         itemlist = [self.info_Inst, self.info_Chunks, self.info_Procs]
         linelist = HLineList(itemlist)
 
+        title_incl = QLabel("Included Workers:")
         self.list_incl = ListDrop(self)
         self.list_incl.itemDropped.connect(self.addInclItem)
 
+        title_excl = QLabel("Excluded Workers:")
         self.list_excl = ListDrop(self)
         self.list_excl.itemDropped.connect(self.addExclItem)
 
         layout_Job = QVBoxLayout()
         layout_Job.addLayout(linelist)
 
+        layout_Job.addWidget(title_incl)
         layout_Job.addWidget(self.list_incl)
+        layout_Job.addWidget(title_excl)
         layout_Job.addWidget(self.list_excl)
 
 
@@ -120,13 +124,26 @@ class TabLayout(QTabWidget):
         # -------------------------------------------------------------------------------------------------------------
 
     def addInclItem(self, worker):
-        item = QListWidgetItem(worker, self.list_incl)
-        item.setStatusTip(worker)
-        print self.list_excl.iterAllItems()
+        if worker in self.list_excl.iterAllItems():
+            print('found match in excluded')
+            excl_item = self.list_excl.findItems(worker, Qt.MatchExactly)[0]
+            item = self.list_excl.takeItem(self.list_excl.row(excl_item))
+            item.setStatusTip(worker)
+            self.list_incl.addItem(item)
+        else:
+            item = QListWidgetItem(worker, self.list_incl)
+            item.setStatusTip(worker)
 
     def addExclItem(self, worker):
-        item = QListWidgetItem(worker, self.list_excl)
-        item.setStatusTip(worker)
+        if worker in self.list_incl.iterAllItems():
+            print('found match in included')
+            excl_item = self.list_incl.findItems(worker, Qt.MatchExactly)[0]
+            item = self.list_incl.takeItem(self.list_incl.row(excl_item))
+            item.setStatusTip(worker)
+            self.list_excl.addItem(item)
+        else:
+            item = QListWidgetItem(worker, self.list_excl)
+            item.setStatusTip(worker)
 
     def setProjPath(self, b):
         if b is True:
