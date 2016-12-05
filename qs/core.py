@@ -183,6 +183,7 @@ class TabLayout(QTabWidget):
             if filepath is not None:
                 self.fileDrop_Name.setText(filepath)
                 self.fileDrop_Name.setToolTip(self.fileDrop_Name.text())
+                self.fileDrop_Name.setWordWrap(True)
             else:
                 self.logStatus.emit('No Maya File Selected')
 

@@ -111,7 +111,7 @@ class FileDrop(QFrame):
     def __init__(self, parent=None):
         super(FileDrop, self).__init__(parent)
         self.setAcceptDrops(True)
-        self.setFixedHeight(75)
+        self.setFixedHeight(100)
 
         # Set Border
         self.setFrameStyle(QFrame.StyledPanel | QFrame.Plain)
