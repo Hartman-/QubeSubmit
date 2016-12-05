@@ -158,9 +158,9 @@ class ListDrop(QListWidget):
 
         # create context menu
         self.rightClickMenu = QMenu(self)
-        act_Remove = QAction('Remove', self)
-        act_Remove.triggered.connect(self.removeItem)
-        self.rightClickMenu.addAction(act_Remove)
+        self.act_Remove = QAction('Remove', self)
+        self.rightClickMenu.addAction(self.act_Remove)
+        self.act_Remove.triggered.connect(self.removeItem)
         # self.rightClickMenu.addAction(QAction('test1', self))
         # self.rightClickMenu.addSeparator()
         # self.rightClickMenu.addAction(QAction('test2', self))
@@ -200,7 +200,7 @@ class ListDrop(QListWidget):
             self.rightClickMenu.exec_(self.mapToGlobal(point))
 
     def removeItem(self):
-        print point
+        self.takeItem(self.row(self.selectedItems()[0]))
 
 
 class HTable(QWidget):
