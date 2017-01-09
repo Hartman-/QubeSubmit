@@ -80,7 +80,6 @@ class Job(object):
         # Now that we have a properly formatted agenda, assign it to the job
         self.qjob['agenda'] = agenda
 
-
     def setupPackage(self):
 
         self.qpackage['simpleCmdType'] = 'Maya BatchRender (%s)' % self.ren
