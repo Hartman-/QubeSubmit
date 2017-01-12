@@ -7,7 +7,7 @@ import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
 
-from qs.gui import HorizLine, VertLine, HLineItem, HLineList, FileDrop, HTable, ListDrop
+from qs.gui import HorizLine, VertLine, HLineItem, HLineList, FileDrop, HTable, ListDrop, PopupModal
 from qs.internal import Job, Submit, parseMayaFile, getWorkers
 
 
@@ -53,11 +53,11 @@ class TabLayout(QTabWidget):
 
         # Setup Scene Information Line Items
         self.info_Renderer = HLineItem('Render Engine', ['rman', 'vray'], inputtype='list')
-        self.info_Proj = HLineItem('Project Path', 'X:\\', inputtype='dir')
-        self.info_Prefix = HLineItem('Image Prefix', 'crazytown')
-        self.info_Frange = HLineItem('Frame Range', '1-10')
+        self.info_Proj = HLineItem('Project Path', 'X:\\Classof2017\\imh29\\_ToRenderfarm\\Renderfarm_PRman_Test', inputtype='dir')
+        self.info_Prefix = HLineItem('Image Prefix', 'frame')
+        self.info_Frange = HLineItem('Frame Range', '1-20')
         self.info_Camera = HLineItem('Camera', 'cam_010')
-        self.info_FrameDir = HLineItem('Image Directory', 'X:\\', inputtype='dir')
+        self.info_FrameDir = HLineItem('Image Directory', 'X:\\Classof2017\\imh29\\_ToRenderfarm\\Renderfarm_PRman_Test\\images', inputtype='dir')
 
         self.info_Proj.searchClicked.connect(self.setProjPath)
         self.info_FrameDir.searchClicked.connect(self.setImagePath)
@@ -79,7 +79,7 @@ class TabLayout(QTabWidget):
         # -------------------------------------------------------------------------------------------------------------
 
         self.info_Inst = HLineItem('# of Computers', '1', inputtype='int')
-        self.info_Chunks = HLineItem('# of Chunks', '5', inputtype='int')
+        self.info_Chunks = HLineItem('Frames per Chunk', '5', inputtype='int')
         self.info_Procs = HLineItem('Cores per Chunk', '10', inputtype='int')
         # info_Reservations = HLineItem('Reservations', 'host.processors=10')
 
@@ -316,11 +316,18 @@ class MainWindow(QMainWindow):
         job.chunks = data.info_Chunks.spinbox.value()
 
         job.setupPackage()
-        print(job.qjob)
 
         QubeSubmit = Submit()
         QubeSubmit.addJob(job.qjob)
-        QubeSubmit.submit()
+        submission = QubeSubmit.submit()
+
+        for s in submission:
+            text = 'Submitted (#%s): %s' % (s['id'], s['name'])
+            PopupModal.showDialog(text, 'Success!')
+
+        job.clearJob()
+
+        # test = PopupModal.showDialog('Submitted (job #1234): Submission Test', 'Success!')
 
 
 #

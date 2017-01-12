@@ -10,6 +10,35 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 
 
+class PopupModal(QDialog):
+    def __init__(self, message, title, parent=None):
+        super(PopupModal, self).__init__(parent)
+
+        layout = QVBoxLayout(self)
+
+        if type(message) is str:
+            self.label = QLabel(str(message))
+            layout.addWidget(self.label)
+        elif type(message) is list:
+            self.list = QListWidget(self)
+            self.list.addItems(message)
+            layout.addWidget(self.list)
+
+        # OK Button
+        self.buttons = QDialogButtonBox(QDialogButtonBox.Ok, Qt.Horizontal, self)
+        layout.addWidget(self.buttons)
+
+        self.buttons.accepted.connect(self.accept)
+
+        self.setWindowTitle(str(title))
+
+    # static method to create the dialog and return (date, time, accepted)
+    @staticmethod
+    def showDialog(message, parent=None):
+        dialog = PopupModal(message, parent)
+        dialog.exec_()
+
+
 class HorizLine(QHBoxLayout):
     def __init__(self, parent=None):
         super(HorizLine, self).__init__(parent)

@@ -36,8 +36,8 @@ class Submit(object):
         self.jobs.append(in_job)
 
     def submit(self):
-        # qb.submit(self.jobs[0])
-        print self.jobs[0]
+        submission = qb.submit(self.jobs[0])
+        return submission
 
 
 # Qube Job Creation
@@ -119,6 +119,11 @@ class Job(object):
             self.ren,
             self.qpackage['scenefile'])
         return cmd
+
+    def clearJob(self):
+        # Delete Job / Reset Job
+        self.qjob.clear()
+        self.qpackage.clear()
 
 
 def parseMayaFile(filepath):
