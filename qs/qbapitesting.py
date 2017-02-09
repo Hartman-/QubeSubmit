@@ -10,8 +10,8 @@ for host in workers:
     address = host['address']
     status = host['state']
     string = '%s | %s | Status: %s' % (name, address, status)
-    print string
-    print host['resources']
+    # print string
+    # print host['resources']
     print "---"
 
 tis = ['name', 'address', 'state']
